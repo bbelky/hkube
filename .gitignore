@@ -9,3 +9,4 @@
 *.tfvars
 
 config.json
+kubespray
