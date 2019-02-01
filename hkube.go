@@ -57,6 +57,12 @@ func main() {
 		if err := cmd.Run(); err != nil {
 			fmt.Println("error:", err)
 		}
+
+		cmd = exec.Command("git", "clone", "https://github.com/kubernetes-sigs/kubespray")
+		if err := cmd.Run(); err != nil {
+			fmt.Println("error:", err)
+		}
+
 		fmt.Println("Configuration loaded successfully")
 
 	}
