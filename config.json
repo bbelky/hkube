@@ -1,8 +1,0 @@
-{
-    "hcloud_token": "ZHSr6PEfKKxhNqPu1mWELeNwUMsO7DAqBIV0RR6Hg0PxXkZCdKycynZC5LHg8uCW",
-    "hcloud_user_sshkey_name": "vporokhov@MacBook-Pro-4.local",
-    "hcloud_server_type": "cx11",
-    "hcloud_location": "nbg1",
-    "hcloud_name": "kube",
-    "hcloud_count": "2"
-}
