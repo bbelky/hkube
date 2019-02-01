@@ -1,0 +1,8 @@
+{
+    "hcloud_token": "enter your API token",
+    "hcloud_user_sshkey_name": "enter name of your SSH key",
+    "hcloud_server_type": "size of you instance",
+    "hcloud_location": "your location",
+    "hcloud_name": "name",
+    "hcloud_count": "number of instances"
+}
