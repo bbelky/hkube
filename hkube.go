@@ -1,12 +1,15 @@
 package main
 
-import "fmt"
-import "encoding/json"
-import "os"
-import "os/exec"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+)
 
 // import "github.com/mozillazg/request"
-import "io/ioutil"
 
 // import "golang.org/x/sys"
 
@@ -47,10 +50,13 @@ func main() {
 			`hcloud_name = "`, hcloud_name, `"`, "\n"+
 			`hcloud_count = "`, hcloud_count, `"`)
 
-		//fmt.Println(dataResponse)
-
 		dataBytes := []byte(dataResponse)
 		ioutil.WriteFile("terraform.tfvars", dataBytes, 0644)
+
+		cmd := exec.Command("terraform", "init")
+		if err := cmd.Run(); err != nil {
+			fmt.Println("error:", err)
+		}
 		fmt.Println("Configuration loaded successfully")
 
 	}
@@ -58,19 +64,24 @@ func main() {
 	if arg == "deploy" {
 		fmt.Println("Starting deployment...")
 
-		cmd1 := exec.Command("terraform", "apply", "-auto-approve")
-		cmd1.Stdout = os.Stdout
-		if err1 := cmd1.Run(); err1 != nil {
-			fmt.Println("error1:", err1)
-		}
-		//fmt.Println("check1:", cmd1.Stdout)
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
 
-		cmd2 := exec.Command("terraform", "output", "public_ip4")
-		iplist := os.Stdout
-		if err2 := cmd2.Run(); err2 != nil {
-			fmt.Println("error2:", err2)
+		cmd := exec.Command("terraform", "apply", "-auto-approve")
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Println("Error:\n", err)
 		}
-		fmt.Println("List of IPs:", iplist)
+
+		cmd = exec.Command("terraform", "output", "public_ip4")
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Println("Error:\n", err)
+		}
+
+		fmt.Print("List of IPs:\n", stdout.String())
 
 		fmt.Println("Deployment successful!")
 	}
