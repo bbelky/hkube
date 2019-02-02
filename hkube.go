@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // import "github.com/mozillazg/request"
@@ -16,6 +17,9 @@ import (
 func main() {
 
 	arg := os.Args[1]
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
 
 	if arg == "config" {
 		fmt.Println("Start loading hkube configuration...")
@@ -55,12 +59,55 @@ func main() {
 
 		cmd := exec.Command("terraform", "init")
 		if err := cmd.Run(); err != nil {
-			fmt.Println("error:", err)
+			fmt.Println("Error1:", err)
 		}
 
-		cmd = exec.Command("git", "clone", "https://github.com/kubernetes-sigs/kubespray")
-		if err := cmd.Run(); err != nil {
-			fmt.Println("error:", err)
+		// sudo pip install -r requirements.txt
+		if _, err := os.Stat("kubespray"); os.IsNotExist(err) {
+
+			fmt.Println("Downloading kubespray...")
+			cmd := exec.Command("git", "clone", "--progress", "https://github.com/kubernetes-sigs/kubespray")
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				fmt.Println("Error2:", err)
+			}
+			fmt.Printf("%s\n", stdout.String())
+			fmt.Printf("%s\n", stderr.String())
+			stdout.Reset()
+			stderr.Reset()
+
+			fmt.Println("Installing requirements...")
+			cmd = exec.Command("sudo", "pip", "install", "-r", "requirements.txt")
+			cmd.Dir = "kubespray"
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				fmt.Println("Error4:", err)
+			}
+			fmt.Printf(stdout.String())
+			fmt.Printf(stderr.String())
+
+			// cp -rfp inventory/sample inventory/mycluster
+			cmd = exec.Command("cp", "-rfp", "inventory/sample", "inventory/mycluster")
+			cmd.Dir = "kubespray"
+			cmd.Stdout = &stdout
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				fmt.Println("Error4:", err)
+			}
+			fmt.Printf(stdout.String())
+			fmt.Printf(stderr.String())
+
+		} else {
+
+			fmt.Println("Updating kubespray...")
+			cmd := exec.Command("git", "-C", "kubespray", "pull")
+			cmd.Stdout = &stdout
+			if err := cmd.Run(); err != nil {
+				fmt.Println("Error3:", err)
+			}
+			fmt.Println(stdout.String())
 		}
 
 		fmt.Println("Configuration loaded successfully")
@@ -68,28 +115,38 @@ func main() {
 	}
 
 	if arg == "deploy" {
+
 		fmt.Println("Starting deployment...")
 
-		var stdout bytes.Buffer
-		var stderr bytes.Buffer
+		cmd1 := exec.Command("terraform", "apply", "-auto-approve")
+		cmd1.Stdout = &stdout
+		cmd1.Stderr = &stderr
+		if err := cmd1.Run(); err != nil {
+			fmt.Println("Error4:\n", err)
+		}
+		fmt.Println(stdout.String())
+		stdout.Reset()
+		stderr.Reset()
 
-		cmd := exec.Command("terraform", "apply", "-auto-approve")
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		if err := cmd.Run(); err != nil {
-			fmt.Println("Error:\n", err)
+		cmd2 := exec.Command("terraform", "output", "public_ip4")
+		cmd2.Stdout = &stdout
+		cmd2.Stderr = &stderr
+		if err := cmd2.Run(); err != nil {
+			fmt.Println("Error5:\n", err)
 		}
 
-		cmd = exec.Command("terraform", "output", "public_ip4")
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		if err := cmd.Run(); err != nil {
-			fmt.Println("Error:\n", err)
+		ips := strings.Fields(stdout.String())
+		cips := []string{}
+		for _, ip := range ips {
+			cips = append(cips, strings.Trim(ip, ","))
 		}
-
-		fmt.Print("List of IPs:\n", stdout.String())
+		iplist := strings.Join(cips, " ")
+		fmt.Println(iplist)
 
 		fmt.Println("Deployment successful!")
+
+		ansible(iplist)
+
 	}
 
 	if arg == "destroy" {
@@ -100,9 +157,58 @@ func main() {
 		if err := cmd.Run(); err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(cmd.Stdout)
 
 		fmt.Println("Cluster deleted")
 	}
+
+}
+
+func ansible(iplist string) {
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	fmt.Println("Run ansible, ", iplist)
+	// declare -a IPS=(10.10.1.3 10.10.1.4 10.10.1.5)
+	// CONFIG_FILE=inventory/mycluster/hosts.ini python3 contrib/inventory_builder/inventory.py ${IPS[@]}
+	// ansible-playbook -i inventory/mycluster/hosts.ini --become --become-user=root cluster.yml
+	// cmd := exec.Command("declare", "-a", "IPS=(", iplist, ")")
+	// dir, _ := os.Getwd()
+	// cmd.Dir = dir + "/kubespray"
+	// cmd.Stdout = &stdout
+	// cmd.Stderr = &stderr
+	// if err := cmd.Run(); err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Printf(stdout.String())
+	// fmt.Printf(stderr.String())
+
+	//cmd := exec.Command("python3", "contrib/inventory_builder/inventory.py", "${IPS[@]}")
+	cmd := exec.Command("python3", "contrib/inventory_builder/inventory.py", "${IPS[@]}")
+	dir, _ := os.Getwd()
+	cmd.Dir = dir + "/kubespray"
+	env := os.Environ()
+	//IPS=([0]="10.10.1.3" [1]="10.10.1.4" [2]="10.10.1.5")
+	env = append(env, fmt.Sprintf("CONFIG_FILE=inventory/mycluster/hosts.ini"))
+	env = append(env, fmt.Sprintf("IPS=([0]=\"10.10.1.3\" [1]=\"10.10.1.4\" [2]=\"10.10.1.5\")"))
+	cmd.Env = env
+	fmt.Println(cmd.Dir, dir, "\n", env)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf(stdout.String())
+	fmt.Printf(stderr.String())
+
+	// cmd = exec.Command("ansible-playbook", "-i", "inventory/mycluster/hosts.ini", "--become", "--become-user=root", "cluster.yml")
+	// cmd.Dir = "kubespray"
+	// cmd.Stdout = &stdout
+	// cmd.Stderr = &stderr
+	// if err := cmd.Run(); err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Printf(stdout.String())
+	// fmt.Printf(stderr.String())
 
 }
