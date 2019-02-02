@@ -8,5 +8,7 @@
 # .tfvars files
 *.tfvars
 
+# HKUBE configuration files
 config.json
 kubespray
+kubeconf
