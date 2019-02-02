@@ -43,6 +43,10 @@ Deploy your cluster:
 ## Delete cluster
 
     # ./hkube destroy
+    
+## More info
+
+How to use Kubespray https://github.com/kubernetes-sigs/kubespray
 
 Contribution
 ------------
