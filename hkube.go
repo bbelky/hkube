@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 // import "github.com/mozillazg/request"
@@ -141,6 +142,7 @@ func main() {
 
 		fmt.Println("Hetzner instances created.")
 
+		time.Sleep(10 * time.Second)
 		ansible(iplist)
 
 	}
