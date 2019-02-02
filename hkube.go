@@ -46,7 +46,6 @@ func main() {
 		hcloud_name := result["hcloud_name"].(string)
 		hcloud_count := result["hcloud_count"].(string)
 
-		//fmt.Println(hcloud_token)
 		dataResponse := fmt.Sprint(`hcloud_token = "`, hcloud_token, `"`, "\n"+
 			`hcloud_user_sshkey_name = "`, hcloud_user_sshkey_name, `"`, "\n"+
 			`hcloud_server_type = "`, hcloud_server_type, `"`, "\n"+
@@ -62,7 +61,6 @@ func main() {
 			fmt.Println("Error1:", err)
 		}
 
-		// sudo pip install -r requirements.txt
 		if _, err := os.Stat("kubespray"); os.IsNotExist(err) {
 
 			fmt.Println("Downloading kubespray...")
@@ -145,6 +143,7 @@ func main() {
 
 		fmt.Println("Deployment successful!")
 
+		//ansible(iplist)
 		ansible(iplist)
 
 	}
@@ -158,57 +157,44 @@ func main() {
 			fmt.Println(err)
 		}
 
+		cmd = exec.Command("rm", "-rf", "kubespray")
+		cmd.Stdout = os.Stdout
+		if err := cmd.Run(); err != nil {
+			fmt.Println(err)
+		}
+
 		fmt.Println("Cluster deleted")
+	}
+
+	if arg == "test" {
+		fmt.Println("Testing someting...")
+
+		//createConfig("10.10.1.3 10.10.1.4 10.10.1.5")
+
+		fmt.Println("Tested")
 	}
 
 }
 
 func ansible(iplist string) {
-
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
-	fmt.Println("Run ansible, ", iplist)
-	// declare -a IPS=(10.10.1.3 10.10.1.4 10.10.1.5)
-	// CONFIG_FILE=inventory/mycluster/hosts.ini python3 contrib/inventory_builder/inventory.py ${IPS[@]}
-	// ansible-playbook -i inventory/mycluster/hosts.ini --become --become-user=root cluster.yml
-	// cmd := exec.Command("declare", "-a", "IPS=(", iplist, ")")
-	// dir, _ := os.Getwd()
-	// cmd.Dir = dir + "/kubespray"
-	// cmd.Stdout = &stdout
-	// cmd.Stderr = &stderr
-	// if err := cmd.Run(); err != nil {
-	// 	fmt.Println(err)
-	// }
-	// fmt.Printf(stdout.String())
-	// fmt.Printf(stderr.String())
+	dataResponse := fmt.Sprint("declare ", "-a ", "IPS=(", iplist, ")", "\n"+
+		`CONFIG_FILE=inventory/mycluster/hosts.ini `, "python3 ", "contrib/inventory_builder/inventory.py ", "${IPS[@]}", "\n"+
+		`ansible-playbook `, "-i ", `inventory/mycluster/hosts.ini `, "--user=root ", "--become ", "--become-user=root ", "cluster.yml")
 
-	//cmd := exec.Command("python3", "contrib/inventory_builder/inventory.py", "${IPS[@]}")
-	cmd := exec.Command("python3", "contrib/inventory_builder/inventory.py", "${IPS[@]}")
-	dir, _ := os.Getwd()
-	cmd.Dir = dir + "/kubespray"
-	env := os.Environ()
-	//IPS=([0]="10.10.1.3" [1]="10.10.1.4" [2]="10.10.1.5")
-	env = append(env, fmt.Sprintf("CONFIG_FILE=inventory/mycluster/hosts.ini"))
-	env = append(env, fmt.Sprintf("IPS=([0]=\"10.10.1.3\" [1]=\"10.10.1.4\" [2]=\"10.10.1.5\")"))
-	cmd.Env = env
-	fmt.Println(cmd.Dir, dir, "\n", env)
+	dataBytes := []byte(dataResponse)
+	ioutil.WriteFile("kubespray/ansible.sh", dataBytes, 0644)
+
+	cmd := exec.Command("/bin/sh", "ansible.sh")
+	cmd.Dir = "kubespray"
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Println(err)
+		fmt.Println("Error4:", err)
 	}
 	fmt.Printf(stdout.String())
 	fmt.Printf(stderr.String())
-
-	// cmd = exec.Command("ansible-playbook", "-i", "inventory/mycluster/hosts.ini", "--become", "--become-user=root", "cluster.yml")
-	// cmd.Dir = "kubespray"
-	// cmd.Stdout = &stdout
-	// cmd.Stderr = &stderr
-	// if err := cmd.Run(); err != nil {
-	// 	fmt.Println(err)
-	// }
-	// fmt.Printf(stdout.String())
-	// fmt.Printf(stderr.String())
 
 }
