@@ -11,7 +11,6 @@ import (
 )
 
 // import "github.com/mozillazg/request"
-
 // import "golang.org/x/sys"
 
 func main() {
@@ -86,7 +85,6 @@ func main() {
 			fmt.Printf(stdout.String())
 			fmt.Printf(stderr.String())
 
-			// cp -rfp inventory/sample inventory/mycluster
 			cmd = exec.Command("cp", "-rfp", "inventory/sample", "inventory/mycluster")
 			cmd.Dir = "kubespray"
 			cmd.Stdout = &stdout
@@ -141,9 +139,8 @@ func main() {
 		iplist := strings.Join(cips, " ")
 		fmt.Println(iplist)
 
-		fmt.Println("Deployment successful!")
+		fmt.Println("Hetzner instances created.")
 
-		//ansible(iplist)
 		ansible(iplist)
 
 	}
@@ -163,13 +160,17 @@ func main() {
 			fmt.Println(err)
 		}
 
-		fmt.Println("Cluster deleted")
+		fmt.Println("Cluster destroyed.")
+	}
+
+	if arg == "update" {
+		fmt.Println("Updating Kubernetes cluster...")
+
+		fmt.Println("Update completed")
 	}
 
 	if arg == "test" {
 		fmt.Println("Testing someting...")
-
-		//createConfig("10.10.1.3 10.10.1.4 10.10.1.5")
 
 		fmt.Println("Tested")
 	}
@@ -179,6 +180,8 @@ func main() {
 func ansible(iplist string) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+
+	fmt.Println("Deploying Kubernetes cluster...")
 
 	dataResponse := fmt.Sprint("declare ", "-a ", "IPS=(", iplist, ")", "\n"+
 		`CONFIG_FILE=inventory/mycluster/hosts.ini `, "python3 ", "contrib/inventory_builder/inventory.py ", "${IPS[@]}", "\n"+
@@ -192,9 +195,14 @@ func ansible(iplist string) {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		fmt.Println("Error4:", err)
+		fmt.Println("Error: ansible run error:", err)
 	}
 	fmt.Printf(stdout.String())
 	fmt.Printf(stderr.String())
+
+	//scp root@ip:/root/.kube/config kubeconf
+
+	fmt.Println("Kubernetes cluster deployed!", "\n"+
+		"Kubernetes IPs: ", iplist)
 
 }
