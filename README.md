@@ -8,25 +8,25 @@ Hkube uses ansible and terraform, so you need to install them first to your mach
 
 ### Homebrew Installation
 
-    # /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 ### Ansible Installation
 
-    # homebrew install ansible
+    homebrew install ansible
 
 ### Terraform Installation
 
-    # homebrew install terraform
+    homebrew install terraform
 
 ### Hkube Installation
 
 Download hkube from github:
 
-    # git clone https://github.com/swiftycloud/hkube/
+    git clone https://github.com/swiftycloud/hkube/
 
 Next you need to add your credentials and k8s settings to config.json file. Copy it from the example first:
 
-    # mv config.json.example config.json
+    mv config.json.example config.json
 
 After that open the config.json file and add you credentials.
 
@@ -34,15 +34,31 @@ After that open the config.json file and add you credentials.
 
 Create configuration files and download kubespray:
 
-    # ./hkube config
+    ./hkube config
     
 Deploy your cluster:
 
-    # ./hkube deploy    
+    ./hkube deploy   
+    ...
+    Kubernetes cluster deployed! 
+    Kubernetes IPs:  116.203.63.47 116.203.49.67 116.203.58.163
+
+### Connect to cluster
+
+Download k8s config file from master server. First IP in the list is your master server. 
+
+    scp root@MASTER_SERVER_IP:/root/.kube/config kubeconf
+    
+Connect to your k8s cluster:
+
+    # To get list of nodes:
+    kubectl --kubeconfig="kubeconf" get nodes
+    # To get cluster config:
+    kubectl --kubeconfig="kubeconf" cluster-info
 
 ## Delete cluster
 
-    # ./hkube destroy
+    ./hkube destroy
     
 ## More info
 
