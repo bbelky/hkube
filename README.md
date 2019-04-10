@@ -22,7 +22,7 @@ Hkube uses ansible and terraform, so you need to install them first to your mach
 
 Download hkube from github:
 
-    git clone https://github.com/swiftycloud/hkube/
+    git clone https://github.com/bbelky/hkube/
 
 Next you need to add your credentials and k8s settings to config.json file. Copy it from the example first:
 
