@@ -68,5 +68,3 @@ Contribution
 ------------
 Hkube is OpenSource software and you are free to contribute. Just send your commit and create merge request.
 
-Created by Swifty
-
