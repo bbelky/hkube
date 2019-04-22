@@ -186,8 +186,8 @@ func ansible(iplist string) {
 	fmt.Println("Deploying Kubernetes cluster...")
 
 	dataResponse := fmt.Sprint("declare ", "-a ", "IPS=(", iplist, ")", "\n"+
-		`CONFIG_FILE=inventory/mycluster/hosts.ini `, "python3 ", "contrib/inventory_builder/inventory.py ", "${IPS[@]}", "\n"+
-		`ansible-playbook `, "-i ", `inventory/mycluster/hosts.ini `, "--user=root ", "--become ", "--become-user=root ", "cluster.yml")
+		`CONFIG_FILE=inventory/mycluster/hosts.yml `, "python3 ", "contrib/inventory_builder/inventory.py ", "${IPS[@]}", "\n"+
+		`ansible-playbook `, "-i ", `inventory/mycluster/hosts.yml `, "--user=root ", "--become ", "--become-user=root ", "cluster.yml")
 
 	dataBytes := []byte(dataResponse)
 	ioutil.WriteFile("kubespray/ansible.sh", dataBytes, 0644)
